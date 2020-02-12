@@ -2,14 +2,17 @@ import React, { Fragment, Component } from "react";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import Navbar from "./components/layout/Navbar";
 import Users from "./components/users/Users";
+import User from "./components/users/User";
 import Search from "./components/users/Search";
 import Alert from "./components/layout/Alert";
+import About from './components/pages/About';
 import axios from "axios";
 import "./App.css";
 
 class App extends Component {
   state = {
     users: [],
+    user: {},
     loading: false,
     alert: null
   };
@@ -22,6 +25,8 @@ class App extends Component {
     // I just got an email from Github saying that this method
     // of sending the client_id and client_secret as query parameters is going to be deprecated this July
     // https://developer.github.com/changes/2019-11-05-deprecated-passwords-and-authorizations-api/#authenticating-using-query-parameters
+    // Also, let me know if you need the Client ID and Client Secret. You can either create one or use mine. I can show you
+    // how to store it in an environment variable if you don't know how
 
     const res = await axios.get(
       `https://api.github.com/search/users?q=${text}&client_id=${process.env.REACT_APP_GITHUB_CLIENT_ID}
@@ -32,6 +37,20 @@ class App extends Component {
       loading: false
     });
   };
+
+  // Get single Github user
+  getUser = async (username) => {
+    this.setState({ loading: true });
+
+    const res = await axios.get(
+      `https://api.github.com/users/${username}?client_id=${process.env.REACT_APP_GITHUB_CLIENT_ID}
+      &client_secret=${process.env.REACT_APP_GITHUB_CLIENT_SECRET}`
+    );
+    this.setState({
+      user: res.data,
+      loading: false
+    });
+  }
 
   // Clear users from state
   clearUsers = () => {
@@ -48,7 +67,7 @@ class App extends Component {
   };
 
   render() {
-    const { users, loading } = this.state;
+    const { users, user, loading } = this.state;
 
     return (
       <Router>
@@ -72,6 +91,10 @@ class App extends Component {
                   </Fragment>
                 )}
               />
+              <Route exact path="/about" component={About} />
+              <Route exact path="/user/:login" render={props => (
+                <User { ...props } getUser={this.getUser} user={user} loading={loading} />
+              )} />
             </Switch>
           </div>
         </div>
